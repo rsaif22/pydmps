@@ -16,19 +16,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from pydmps.dmp import DMPs
-
+import scipy
 import numpy as np
 
 
 class DMPs_rhythmic(DMPs):
     """An implementation of discrete DMPs"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, pattern="rhythmic", **kwargs):
         """
         """
 
         # call super class constructor
-        super(DMPs_rhythmic, self).__init__(pattern="rhythmic", **kwargs)
+        # super(DMPs_rhythmic, self).__init__(pattern="rhythmic", **kwargs)
+        super(DMPs_rhythmic, self).__init__(pattern=pattern, **kwargs)
 
         self.gen_centers()
 
@@ -137,6 +138,8 @@ if __name__ == "__main__":
         dmp = DMPs_rhythmic(n_dmps=2, n_bfs=bfs)
 
         dmp.imitate_path(y_des=np.array([path1, path2]))
+        dmp.reset_state()
+        dmp.y0 = np.array([7, 0.5])
         y_track, dy_track, ddy_track = dmp.rollout()
 
         plt.figure(2)

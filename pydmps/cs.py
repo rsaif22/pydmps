@@ -38,6 +38,10 @@ class CanonicalSystem:
         elif pattern == "rhythmic":
             self.step = self.step_rhythmic
             self.run_time = 2 * np.pi
+        elif pattern == "hopf":
+            self.step = self.step_hopf
+            self.gamma = 1.0
+            self.run_time = 2 * np.pi
         else:
             raise Exception(
                 "Invalid pattern type specified: \
@@ -57,6 +61,8 @@ class CanonicalSystem:
         else:
             timesteps = self.timesteps
         self.x_track = np.zeros(timesteps)
+        # if self.pattern == "hopf":
+            # self.x2_track = np.zeros(timesteps)
 
         self.reset_state()
         for t in range(timesteps):
@@ -68,6 +74,9 @@ class CanonicalSystem:
     def reset_state(self):
         """Reset the system state"""
         self.x = 1.0
+        if self.pattern == "hopf":
+            self.x1 = 0.0
+            self.x2 = 2.0
 
     def step_discrete(self, tau=1.0, error_coupling=1.0):
         """Generate a single step of x for discrete
@@ -92,6 +101,28 @@ class CanonicalSystem:
         """
         self.x += (1 * error_coupling * tau) * self.dt
         return self.x
+    
+    def step_hopf(self, tau=1.0, error_coupling=1.0):
+        """Generate a single step of x for hopf
+        closed loop movements. Decaying from 1 to 0
+        according to dx = -ax*x.
+
+        tau float: gain on execution time
+                   increase tau to make the system execute faster
+        error_coupling float: slow down if the error is > 1
+        """
+        diag = self.gamma**2 - (self.x**2 + self.x2**2)
+        off_diag = 1 / tau
+        # mat = np.array([[diag, -off_diag], [off_diag, diag]])
+        # vec = np.array([self.x1, self.x2])
+        # res = np.dot(mat, vec)
+        # self.x1 += res[0] * error_coupling * self.dt
+        # self.x2 += res[1] * error_coupling * self.dt
+        self.x1 += (diag * self.x1 - off_diag * self.x2) * error_coupling * self.dt
+        self.x2 += (diag * self.x2 + off_diag * self.x1) * error_coupling * self.dt
+        self.x = np.arctan2(self.x2, self.x1)
+        return self.x 
+        
 
 
 # ==============================
@@ -133,7 +164,7 @@ if __name__ == "__main__":
 
     plt.tight_layout()
 
-    cs = CanonicalSystem(dt=0.001, pattern="rhythmic")
+    cs = CanonicalSystem(dt=0.001, pattern="hopf")
     # test normal rollout
     x_track1 = cs.rollout()
 
@@ -147,3 +178,4 @@ if __name__ == "__main__":
     plt.ylabel("x")
     plt.title("Canonical system - rhythmic")
     plt.show()
+
